@@ -42,6 +42,13 @@ cp $LEIN_BIN_SOURCE $LEIN_BIN_PATH
 chmod +x $LEIN_BIN_PATH
 sed -i s/##LEIN_VERSION##/$LEIN_VERSION/ $LEIN_BIN_PATH
 
+# install wagon
+WAGON_JAR_PATH="$CACHE_DIR/s3-wagon-private-1.0.0-standalone.jar"
+WAGON_JAR_URL="https://s3.amazonaws.com/heroku-buildpack-clojure/s3-wagon-private-1.0.0-standalone.jar"
+if [ ! -r "$WAGON_JAR_PATH" ]; then
+    curl --silent --show-error --max-time 120 -L -o $WAGON_JAR_PATH $WAGON_JAR_URL
+fi
+
 # unpack existing cache
 CACHE_STORE_DIR=$CACHE_DIR"/.m2"
 CACHE_TARGET_DIR=$BUILD_DIR"/.m2"
@@ -58,7 +65,14 @@ LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"deps"}
 echo "-----> Installing dependencies and compiling with Leiningen"
 echo "       Running: LEIN_NO_DEV=y lein $LEIN_BUILD_TASK"
 cd $BUILD_DIR
-PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" LEIN_NO_DEV=y lein $LEIN_BUILD_TASK 2>&1 | sed -u 's/^/       /'
+
+export PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin 
+export JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" 
+export LEIN_NO_DEV=y 
+export CLASSPATH="$WAGON_JAR_PATH"
+
+lein $LEIN_BUILD_TASK 2>&1 | sed -u 's/^/       /'
+
 if [ "${PIPESTATUS[*]}" != "0 0" ]; then
   echo " !     Failed to install dependencies with Leiningen"
   exit 1
