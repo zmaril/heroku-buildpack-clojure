@@ -59,6 +59,12 @@ else
   mkdir -p $CACHE_TARGET_DIR
 fi
 
+# Special-case for handling credentials.
+if [ -r "$BUILD_DIR/.lein-heroku-init.clj" ]; then
+  mkdir -p "$BUILD_DIR/.lein/"
+  cp "$BUILD_DIR/.lein-heroku-init.clj" "$BUILD_DIR/.lein/init.clj"
+fi
+
 LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"deps"}
 
 # fetch deps with lein
@@ -67,8 +73,8 @@ echo "       Running: LEIN_NO_DEV=y lein $LEIN_BUILD_TASK"
 cd $BUILD_DIR
 
 export PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin 
-export JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" 
-export LEIN_NO_DEV=y 
+export JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR"
+export LEIN_NO_DEV=y
 export CLASSPATH="$WAGON_JAR_PATH"
 
 lein $LEIN_BUILD_TASK 2>&1 | sed -u 's/^/       /'
