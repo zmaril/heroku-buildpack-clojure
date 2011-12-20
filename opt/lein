@@ -6,6 +6,15 @@ export LEIN_NO_DEV=y
 
 JAVA_OPTS="$JAVA_OPTS -client -Duser.home=$HOME -Dleiningen.original.pwd=$PWD"
 
+if [ "$LEIN_HOME" = "" ]; then
+  if [ -d "$PWD/.lein" ] && [ "$PWD" != "$HOME" ]; then
+    echo "Leiningen is running in bundled mode."
+    LEIN_HOME="$PWD/.lein"
+  else
+    LEIN_HOME="$HOME/.lein"
+  fi
+fi
+
 if [ "$1" == "repl" ]; then
   CLASSPATH=$(lein classpath)
   if [ "$COLUMNS" != "" -a "$LINES" != "" ]; then
