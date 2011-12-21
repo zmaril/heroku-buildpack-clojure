@@ -1,0 +1,5 @@
+(def leiningen-auth {(System/getenv "MAVEN_REPOSITORY_URL")
+                     {:username (System/getenv "MAVEN_REPOSITORY_USERNAME")
+                      :passphrase (System/getenv "MAVEN_REPOSITORY_PASSPHRASE")
+                      :private-key (System/getenv "MAVEN_REPOSITORY_PRIVATE_KEY")
+                      :password (System/getenv "MAVEN_REPOSITORY_PASSWORD")}})

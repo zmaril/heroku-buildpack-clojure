@@ -55,15 +55,18 @@ dependencies into the `lib` directory.
 ## Private Repositories
 
 If you have dependencies which cannot be published to any public Maven
-repository, you can use the
+repository, you can
+[deploy them to a private repository](https://github.com/technomancy/leiningen/blob/master/doc/DEPLOY.md).
+The simplest way to set up a private repository is the
 [s3-wagon-private](https://github.com/technomancy/s3-wagon-private)
-plugin to publish and consume from private repositories hosted on S3.
+plugin, though running a private [Archiva](http://archiva.apache.org/)
+or [Nexus](http://nexus.sonatype.org/) server would work just as well.
 
-Currently this requires installing `s3-wagon-private` as a user-level
-plugin locally and using the `s3-wagon` branch of the Clojure buildpack:
+Currently publishing to and consuming from private S3 repositories
+requires installing `s3-wagon-private` as a user-level plugin locally:
+and using the `s3-wagon` branch of the Clojure buildpack:
 
     $ lein plugin install s3-wagon-private 1.0.0
-    $ heroku config:add BUILDPACK_URL=git@github.com:heroku/heroku-buildpack-clojure.git#s3-wagon
 
 Future versions of Leiningen will allow you to declare
 `s3-wagon-private` in `project.clj`, but for the time being you may
@@ -85,19 +88,34 @@ for your app to expose config variables at compile time:
     $ heroku plugins:install http://github.com/heroku/heroku-labs.git # if needed
     $ heroku labs:enable user_env_compile
 
-Then you can add the `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` config values:
+Then you can add your repository settings as config vars:
 
-    $ heroku config:add AWS_ACCESS_KEY=[...] AWS_SECRET_KEY=[...]
+    $ heroku config:add MAVEN_REPOSITORY_URL=s3p://secretbucket/releases/ \
+        MAVEN_REPOSITORY_USERNAME=[AWS_ACCESS_KEY] \ 
+        MAVEN_REPOSITORY_PASSPHRASE=[AWS_SECRET_KEY]
 
-Finally you'll need to read these values into Leiningen. You can
-either embed calls to `System/getenv` into project.clj directly or
-check in a `.lein-heroku-init.clj` file that will be copied to
-`~/.lein/init.clj` in the slug compilation environment.
+Finally you must expose them to Leiningen for the slug compilation
+process to have access to the repository. If you use the `private-repo` 
+branch of the buildpack, it will be handled for you:
+
+    $ heroku config:add BUILDPACK_URL=git@github.com:heroku/heroku-buildpack-clojure.git#private-repo
+
+Note that this method will only support a single private repository.
+If you need to read from multiple authenticated repositories you can
+just read the environment variables from within project.clj, though
+this will require you to always have the environment variables set at
+development time:
 
 ```clj
-(def leiningen-auth {"s3p://secret-bucket/releases"
-                     {:username (System/getenv "AWS_ACCESS_KEY")
-                      :passphrase (System/getenv "AWS_SECRET_KEY")}})
+(defproject my-project "1.0.0-SNAPSHOT"
+  :dependencies [[org.clojure/clojure "1.3.0"]
+                 [secret-dependency "1.0.1"]]
+  :repositories {"internal" {:url "s3p://weyland-yutani-engineering/releases/"
+                             :username (System/getenv "MAVEN_REPOSITORY_USERNAME")
+                             :passphrase (System/getenv "MAVEN_REPOSITORY_PASSPHRASE")}
+                 "corp" {:url "https://nexus.weyland-yutani.com/archiva/releases/"
+                         :username (System/getenv "MAVEN_REPOSITORY_USERNAME")
+                         :passphrase (System/getenv "MAVEN_REPOSITORY_PASSPHRASE")}})
 ```
 
 ## Hacking

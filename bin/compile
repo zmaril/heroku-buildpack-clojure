@@ -60,9 +60,11 @@ else
 fi
 
 # Special-case for handling credentials.
-if [ -r "$BUILD_DIR/.lein-heroku-init.clj" ]; then
-  mkdir -p "$BUILD_DIR/.lein/"
-  cp "$BUILD_DIR/.lein-heroku-init.clj" "$BUILD_DIR/.lein/init.clj"
+LEIN_INIT_SOURCE="$(dirname $0)/../opt/init.clj"
+LEIN_INIT_TARGET="$BUILD_DIR/.lein/init.clj"
+if [ "$MAVEN_REPOSITORY_URL" != "" ] && [ ! -r "$LEIN_INIT_TARGET" ]; then
+  mkdir -p "$(dirname $LEIN_INIT_TARGET)"
+  cp "$LEIN_INIT_SOURCE" "$LEIN_INIT_TARGET"
 fi
 
 LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"deps"}
