@@ -52,6 +52,54 @@ should work instead.
 This buildpack will call `LEIN_NO_DEV=y lein deps` to copy your
 dependencies into the `lib` directory.
 
+## Private Repositories
+
+If you have dependencies which cannot be published to any public Maven
+repository, you can use the
+[s3-wagon-private](https://github.com/technomancy/s3-wagon-private)
+plugin to publish and consume from private repositories hosted on S3.
+
+Currently this requires installing `s3-wagon-private` as a user-level
+plugin locally and using the `s3-wagon` branch of the Clojure buildpack:
+
+    $ lein plugin install s3-wagon-private 1.0.0
+    $ heroku config:add BUILDPACK_URL=git@github.com:heroku/heroku-buildpack-clojure.git#s3-wagon
+
+Future versions of Leiningen will allow you to declare
+`s3-wagon-private` in `project.clj`, but for the time being you may
+want to include this warning so you will get more helpful error
+messages when it's missing:
+
+```clj
+(try (resolve 's3.wagon.private.PrivateWagon)
+     (catch java.lang.ClassNotFoundException _
+       (println "WARNING: You appear to be missing s3-private-wagon.")
+       (println "To install it: lein plugin install s3-private-wagon 1.0.0")))
+```
+
+It's [recommended](http://www.12factor.net/config) to keep your
+repository credentials out of source control. You'll need to
+[enable user_env_compile](http://devcenter.heroku.com/articles/labs-user-env-compile)
+for your app to expose config variables at compile time:
+
+    $ heroku plugins:install http://github.com/heroku/heroku-labs.git # if needed
+    $ heroku labs:enable user_env_compile
+
+Then you can add the `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` config values:
+
+    $ heroku config:add AWS_ACCESS_KEY=[...] AWS_SECRET_KEY=[...]
+
+Finally you'll need to read these values into Leiningen. You can
+either embed calls to `System/getenv` into project.clj directly or
+check in a `.lein-heroku-init.clj` file that will be copied to
+`~/.lein/init.clj` in the slug compilation environment.
+
+```clj
+(def leiningen-auth {"s3p://secret-bucket/releases"
+                     {:username (System/getenv "AWS_ACCESS_KEY")
+                      :passphrase (System/getenv "AWS_SECRET_KEY")}})
+```
+
 ## Hacking
 
 To change this buildpack, fork it on GitHub. Push up changes to your
