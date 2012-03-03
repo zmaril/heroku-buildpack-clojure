@@ -9,7 +9,7 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 
 # install leiningen jar
-LEIN_VERSION="1.7.0"
+LEIN_VERSION="2.0.0-SNAPSHOT"
 LEIN_JAR_URL="https://heroku-buildpack-clojure.s3.amazonaws.com/leiningen-$LEIN_VERSION-standalone.jar"
 LEIN_JAR_PATH="$CACHE_DIR/leiningen-$LEIN_VERSION-standalone.jar"
 
@@ -25,14 +25,6 @@ fi
 mkdir -p "$BUILD_DIR/.lein"
 cp "$LEIN_JAR_PATH" "$BUILD_DIR/.lein/leiningen-$LEIN_VERSION-standalone.jar"
 
-# install rlwrap binary
-RLWRAP_BIN_URL="https://s3.amazonaws.com/clojure-lp/rlwrap-0.3.7"
-RLWRAP_BIN_PATH=$BUILD_DIR"/.lein/bin/rlwrap"
-echo "       Downloading: rlwrap-0.3.7"
-mkdir -p $(dirname $RLWRAP_BIN_PATH)
-curl --silent --show-error --max-time 60 -L -o $RLWRAP_BIN_PATH $RLWRAP_BIN_URL
-chmod +x $RLWRAP_BIN_PATH
-
 # install lein script
 LEIN_BIN_SOURCE="$(dirname $0)/../opt/lein"
 LEIN_BIN_PATH=$BUILD_DIR"/.lein/bin/lein"
@@ -43,27 +35,18 @@ chmod +x $LEIN_BIN_PATH
 sed -i s/##LEIN_VERSION##/$LEIN_VERSION/ $LEIN_BIN_PATH
 
 # unpack existing cache
-CACHE_STORE_DIR=$CACHE_DIR"/.m2"
-CACHE_TARGET_DIR=$BUILD_DIR"/.m2"
-rm -rf $CACHE_TARGET_DIR
-if [ -d $CACHE_STORE_DIR ]; then
-  cp -r $CACHE_STORE_DIR $CACHE_TARGET_DIR
-else
-  mkdir -p $CACHE_TARGET_DIR
+CACHE_REPOSITORY=$CACHE_DIR"/.m2"
+LOCAL_REPOSITORY=$BUILD_DIR"/.m2"
+
+if [ -d $CACHE_REPOSITORY ]; then
+  rsync -r $CACHE_REPOSITORY $LOCAL_REPOSITORY
 fi
 
-LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"deps"}
+LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"compile :all"}
 
 # fetch deps with lein
-echo "-----> Installing dependencies and compiling with Leiningen"
-
-# LEIN_NO_DEV should be optional.
-if [ "$LEIN_DEV" = "" ]; then
-  export LEIN_NO_DEV=y
-  echo "       Running: LEIN_NO_DEV=y lein $LEIN_BUILD_TASK"
-else
-  echo "       Running: lein $LEIN_BUILD_TASK"
-fi
+echo "-----> Compiling with Leiningen."
+echo "       Running: lein $LEIN_BUILD_TASK"
 
 cd $BUILD_DIR
 PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin \
@@ -74,8 +57,11 @@ if [ "${PIPESTATUS[*]}" != "0 0" ]; then
   exit 1
 fi
 
+# TODO: GC old classpath jars from cache
+# CLASSPATH=$(lein classpath | tr : " ")
+# for c in $CLASSPATH; do
+#    ???
+# done
+
 # repack cache with new assets
-rm -rf $CACHE_STORE_DIR
-mkdir -p $(dirname $CACHE_STORE_DIR)
-cp -r $CACHE_TARGET_DIR $CACHE_STORE_DIR
-rm -rf $CACHE_TARGET_DIR
+rsync -r --delete $LOCAL_REPOSITORY $CACHE_REPOSITORY
