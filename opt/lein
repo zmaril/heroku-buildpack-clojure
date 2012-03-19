@@ -4,7 +4,10 @@
 export LEIN_VERSION="##LEIN_VERSION##"
 export LEIN_NO_DEV=y
 
-JAVA_OPTS="$JAVA_OPTS -client -Duser.home=$HOME -Dleiningen.original.pwd=$PWD"
+# Prefer JVM_OPTS, but fall back to JAVA_OPTS for compatibility
+export JVM_OPTS="${JVM_OPTS:-"$JAVA_OPTS"}"
+export LEIN_JVM_OPTS=${LEIN_JVM_OPTS:-$JVM_OPTS}
+LEIN_JVM_OPTS="$LEIN_JVM_OPTS -Duser.home=$HOME -Dleiningen.original.pwd=$PWD"
 
 if [ "$LEIN_HOME" = "" ]; then
   if [ -d "$PWD/.lein" ] && [ "$PWD" != "$HOME" ]; then
