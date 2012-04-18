@@ -7,5 +7,5 @@ config_vars:
   PATH: .lein/bin:/usr/local/bin:/usr/bin:/bin
   JVM_OPTS: -Xmx400m
 default_process_types:
-  web: lein run
+  web: lein trampoline run
 EOF
