@@ -45,7 +45,7 @@ fi
 if [ -x $BUILD_DIR/bin/build ]; then
   BUILD_COMMAND=bin/build
 else
-  LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"compile :all"}
+  LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"with-profile production compile :all"}
   BUILD_COMMAND="lein $LEIN_BUILD_TASK"
 fi
 
