@@ -35,10 +35,10 @@ sed -i s/##LEIN_VERSION##/$LEIN_VERSION/ $LEIN_BIN_PATH
 
 # unpack existing cache
 CACHE_REPOSITORY="$CACHE_DIR/.m2"
-LOCAL_REPOSITORY="$HOME/.m2"
+LOCAL_REPOSITORY="$BUILD_DIR/.m2"
 
 if [ -d $CACHE_REPOSITORY ]; then
-  cp -r $CACHE_REPOSITORY $LOCAL_REPOSITORY
+  cp -r -n $CACHE_REPOSITORY $LOCAL_REPOSITORY
 fi
 
 LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"compile :all"}
@@ -55,12 +55,11 @@ if [ "${PIPESTATUS[*]}" != "0 0" ]; then
   exit 1
 fi
 
-# TODO: GC old classpath jars from cache
-# CLASSPATH=$(lein classpath | tr : " ")
-# for c in $CLASSPATH; do
-#    ???
-# done
+# Clear unused jars
+join -v 1 <(find "$LOCAL_REPOSITORY" -name '*.jar' | sort) \
+    <(.lein/bin/lein classpath | tr : "\n" | sort) | \
+    xargs -d"\n" rm
 
-# repack cache with new assets
+# Repopulate cache
 rm -rf $CACHE_REPOSITORY
 cp -r $LOCAL_REPOSITORY $CACHE_REPOSITORY
