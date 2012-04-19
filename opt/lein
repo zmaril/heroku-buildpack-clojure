@@ -5,7 +5,7 @@ export LEIN_VERSION="##LEIN_VERSION##"
 
 LEIN_JAR=".lein/leiningen-$LEIN_VERSION-standalone.jar"
 
-export LEIN_HOME=${LEIN_HOME:-"$HOME/.lein"}
+export LEIN_HOME=${LEIN_HOME:-".lein"}
 export JAVA_CMD=${JAVA_CMD:-"java"}
 export LEIN_JAVA_CMD=${LEIN_JAVA_CMD:-$JAVA_CMD}
 
