@@ -9,6 +9,8 @@ projects containing a project.clj file, though it may be an older
 revision than current master. This repository is made available so
 users can fork for their own needs and contribute patches back.
 
+This particular branch enables the use of the Leiningen 2 preview.
+
 ## Usage
 
 Example usage for an app already stored in git:
@@ -21,24 +23,27 @@ Example usage for an app already stored in git:
         `-- sample
             `-- core.clj
 
-    $ heroku create --stack cedar --buildpack http://github.com/heroku/heroku-buildpack-clojure.git
+    $ heroku create --stack cedar --buildpack "http://github.com/heroku/heroku-buildpack-clojure.git#lein-2"
 
     $ git push heroku master
     ...
     -----> Heroku receiving push
     -----> Fetching custom buildpack
-    -----> Clojure app detected
+    -----> Leiningen 2 (Clojure) app detected
     -----> Installing Leiningen
-           Downloading: leiningen-1.7.1-standalone.jar
-           Downloading: rlwrap-0.3.7
+           Downloading: leiningen-2.0.0-preview3
            Writing: lein script
-    -----> Installing dependencies with Leiningen
-           Running: LEIN_NO_DEV=y lein deps
-           Downloading: org/clojure/clojure/1.2.1/clojure-1.2.1.pom from central
-           Downloading: org/clojure/clojure/1.2.1/clojure-1.2.1.jar from central
-           Copying 1 file to /tmp/build_2e5yol0778bcw/lib
+    -----> Building with lein compile :all
+           Retrieving org/clojure/clojure/1.3.0/clojure-1.3.0.pom 
+               from http://repo1.maven.org/maven2/
+           Retrieving org/sonatype/oss/oss-parent/5/oss-parent-5.pom 
+               from http://repo1.maven.org/maven2/
+           Retrieving ring/ring-jetty-adapter/1.0.0/ring-jetty-adapter-1.0.0.pom (2k)
+               from http://clojars.org/repo/
+           Retrieving ring/ring-core/1.0.0/ring-core-1.0.0.pom (2k)
+               from http://clojars.org/repo/
     -----> Discovering process types
-           Procfile declares types -> core
+           Procfile declares types -> web
     -----> Compiled slug size is 10.0MB
     -----> Launching... done, v4
            http://gentle-water-8841.herokuapp.com deployed to Heroku
@@ -49,29 +54,41 @@ The buildpack will detect your app as Clojure if it has a
 [the standard Java buildpack](http://github.com/heroku/heroku-buildpack-java)
 should work instead.
 
-## Configuration
+## Process Types
 
-Currently most of the build-level configurations require turning on the
-[user_env_compile](http://devcenter.heroku.com/articles/labs-user-env-compile)
-functionality so the build step will have access to environment variables.
+When
+[declaring process types in your Procfile](https://devcenter.heroku.com/articles/procfile),t's
+recommended that you specify a profile with the `with-profile` task in
+order to avoid having development dependencies or tests on the
+classpath. There is an empty `production` profile provided, but you
+can specify `:profiles {:production {:key "value"}}` in your
+`project.clj` file if you have further configuration applicable only
+in production.
 
-By default your project is built by running `lein deps`, which copies
-all the dependencies into the `lib` directory. You may wish to perform
-a full AOT compile during build; this is done by setting
-`LEIN_BUILD_TASK=compile :all`. This has the benefit of both speeding
-up dyno launch times and catching certain classes of error during push.
-
-By default your project will run in "no dev" mode, which means
-`:dev-dependencies` will not be available and the `test` and
-`test-resources` directories will not be on the classpath. You can set
-`LEIN_DEV=y` to disable this if you need access to a plugin at runtime.
-
-Finally, you can reduce memory consumption by using the `trampoline`
-task in your Procfile. This will cause Leiningen to calculate the
+It's also helpful to reduce memory consumption by using the
+`trampoline` task. This will cause Leiningen to calculate the
 classpath and code to run for your project, then exit and execute your
 project's JVM:
 
-    web: lein trampoline run -m myapp.web
+    web: lein with-profile production trampoline run -m myapp.web
+
+## Configuration
+
+Apps will be built with `lein with-profile production compile :all` by
+default. To specify a different build, (for example, precompiling
+assets or avoiding AOT compilation) check an executable `bin/build`
+script into your repository and it will be run instead.
+
+If you have dependencies which are not available in any public
+repositories, try using the
+[s3-wagon-private](https://github.com/technomancy/s3-wagon-private)
+plugin to store them on S3.
+
+The build process will not have access to your app's config
+environment variables unless you enable
+[user_env_compile](http://devcenter.heroku.com/articles/labs-user-env-compile)
+using `heroku labs:enable user_env_compile`. This is required for
+credentials if you use a private repository for dependencies.
 
 ## Hacking
 
@@ -88,15 +105,11 @@ Open `bin/compile` in your editor, and replace the block labeled
     echo "-----> Generating uberjar with Leiningen:"
     echo "       Running: LEIN_NO_DEV=y lein uberjar"
     cd $BUILD_DIR
-    PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" LEIN_NO_DEV=y lein uberjar 2>&1 | sed -u 's/^/       /'
+    PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin JAVA_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" lein with-profile production uberjar 2>&1 | sed -u 's/^/       /'
     if [ "${PIPESTATUS[*]}" != "0 0" ]; then
       echo " !     Failed to create uberjar with Leiningen"
       exit 1
     fi
-
-The `LEIN_NO_DEV` environment variable will cause Leiningen to keep
-the test directories and dev dependencies off the classpath, so be
-sure to set it for every `lein` invocation.
 
 Commit and push the changes to your buildpack to your GitHub fork,
 then push your sample app to Heroku to test. You should see:
@@ -109,7 +122,5 @@ To see what the buildpack has produced, do `heroku run bash` and you
 will be logged into an environment with your compiled app available.
 From there you can explore the filesystem and run `lein` commands.
 
-Note that projects with the `:local-repo-classpath` option set in
-`project.clj` will cause dependencies to be re-fetched when each
-process is started, which is highly undesirable. It's recommended you
-disable this option.
+You can also use [Mason](https://github.com/ddollar/mason) to test the
+buildpack locally without having to push with git.
