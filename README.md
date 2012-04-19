@@ -1,7 +1,7 @@
 # Heroku buildpack: Clojure
 
 This is a Heroku buildpack for Clojure apps. It uses
-[Leiningen](https://github.com/technomancy/leiningen).
+[Leiningen](http://leiningen.org).
 
 Note that you don't have to do anything special to use this buildpack
 with Clojure apps on Heroku; it will be used by default for all
@@ -57,18 +57,19 @@ should work instead.
 ## Process Types
 
 When
-[declaring process types in your Procfile](https://devcenter.heroku.com/articles/procfile),t's
-recommended that you specify a profile with the `with-profile` task in
-order to avoid having development dependencies or tests on the
-classpath. There is an empty `production` profile provided, but you
+[declaring process types in your Procfile](https://devcenter.heroku.com/articles/procfile),
+it's recommended that you specify a profile with the `with-profile`
+task in order to avoid having development dependencies or tests on the
+classpath. There is an empty `:production` profile provided, but you
 can specify `:profiles {:production {:key "value"}}` in your
 `project.clj` file if you have further configuration applicable only
-in production.
+in production. However, it's more common to make production-specific
+values the default and simply override them in the `:dev` profile.
 
 It's also helpful to reduce memory consumption by using the
 `trampoline` task. This will cause Leiningen to calculate the
 classpath and code to run for your project, then exit and execute your
-project's JVM:
+project's JVM, avoiding runtime overhead:
 
     web: lein with-profile production trampoline run -m myapp.web
 
@@ -76,8 +77,9 @@ project's JVM:
 
 Apps will be built with `lein with-profile production compile :all` by
 default. To specify a different build, (for example, precompiling
-assets or avoiding AOT compilation) check an executable `bin/build`
-script into your repository and it will be run instead.
+assets or avoiding AOT compilation or run shell commands after a
+Leiningen task) check an executable `bin/build` script into your
+repository and it will be run instead.
 
 If you have dependencies which are not available in any public
 repositories, try using the
