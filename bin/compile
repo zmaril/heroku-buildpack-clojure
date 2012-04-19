@@ -66,3 +66,7 @@ done
 # Repopulate cache
 rm -rf $CACHE_REPOSITORY
 cp -r $LOCAL_REPOSITORY $CACHE_REPOSITORY
+
+# Local Variables:
+# sh-basic-offset: 2
+# End:
