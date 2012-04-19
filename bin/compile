@@ -56,9 +56,12 @@ if [ "${PIPESTATUS[*]}" != "0 0" ]; then
 fi
 
 # Clear unused jars
-join -v 1 <(find "$LOCAL_REPOSITORY" -name '*.jar' | sort) \
-    <(.lein/bin/lein classpath | tr : "\n" | sort) | \
-    xargs -d"\n" rm
+STALE_JARS=$(join -v 1 <(find "$LOCAL_REPOSITORY" -name '*.jar' | sort) \
+                       <(.lein/bin/lein classpath | tr : "\n" | sort))
+
+for jar in $STALE_JARS; do
+  rm -rf $(dirname "$jar")
+done
 
 # Repopulate cache
 rm -rf $CACHE_REPOSITORY
