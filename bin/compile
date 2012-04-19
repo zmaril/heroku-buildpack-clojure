@@ -41,15 +41,20 @@ if [ -d $CACHE_REPOSITORY ]; then
   cp -r -n $CACHE_REPOSITORY $LOCAL_REPOSITORY
 fi
 
-LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"compile :all"}
+# Calculate build command
+if [ -x $BUILD_DIR/bin/build ]; then
+  BUILD_COMMAND=bin/build
+else
+  LEIN_BUILD_TASK=${LEIN_BUILD_TASK:-"compile :all"}
+  BUILD_COMMAND="lein $LEIN_BUILD_TASK"
+fi
 
-echo "-----> Compiling with Leiningen."
-echo "       Running: lein $LEIN_BUILD_TASK"
+echo "-----> Building with $BUILD_COMMAND"
 
 cd $BUILD_DIR
 PATH=.lein/bin:/usr/local/bin:/usr/bin:/bin \
   LEIN_JVM_OPTS="-Xmx500m -Duser.home=$BUILD_DIR" \
-  lein $LEIN_BUILD_TASK 2>&1 | sed -u 's/^/       /'
+  $BUILD_COMMAND 2>&1 | sed -u 's/^/       /'
 if [ "${PIPESTATUS[*]}" != "0 0" ]; then
   echo " !     Failed to install dependencies with Leiningen"
   exit 1
