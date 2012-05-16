@@ -15,10 +15,10 @@ export LEIN_JVM_OPTS=${LEIN_JVM_OPTS:-"-Xbootclasspath/a:$LEIN_JAR -Duser.home=$
 
 # apply context specific CLASSPATH entries
 if [ -r .lein-classpath ]; then
-    CLASSPATH="`cat .lein-classpath`:$CLASSPATH"
+    CLASSPATH="`cat .lein-classpath`:$LEIN_JAR"
+else
+    CLASSPATH="$LEIN_JAR"
 fi
-
-CLASSPATH="$CLASSPATH:$LEIN_JAR"
 
 TRAMPOLINE_FILE="/tmp/lein-trampoline-$$"
 
