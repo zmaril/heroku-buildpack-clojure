@@ -9,7 +9,7 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 
 # install leiningen jar
-LEIN_VERSION="2.0.0-preview3"
+LEIN_VERSION="2.0.0-preview4"
 LEIN_JAR_URL="https://heroku-buildpack-clojure.s3.amazonaws.com/leiningen-$LEIN_VERSION-standalone.jar"
 LEIN_JAR_PATH="$CACHE_DIR/leiningen-$LEIN_VERSION-standalone.jar"
 
@@ -66,6 +66,7 @@ fi
 # Clear unused jars
 STALE_JARS=$(join -v 1 <(find "$LOCAL_REPOSITORY" -name '*.jar' | sort) \
                        <(.lein/bin/lein classpath | tr : "\n" | sort))
+# TODO: strip plugin jars from stale jars
 
 for jar in $STALE_JARS; do
   rm -rf $(dirname "$jar")
