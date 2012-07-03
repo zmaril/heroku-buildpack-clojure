@@ -25,6 +25,8 @@ TRAMPOLINE_FILE="/tmp/lein-trampoline-$$"
 $LEIN_JAVA_CMD \
     -client -XX:+TieredCompilation \
     $LEIN_JVM_OPTS \
+    -Dfile.encoding=UTF-8 \
+    -Dmaven.wagon.http.ssl.easy=false \
     -Dleiningen.original.pwd="$PWD" \
     -Dleiningen.trampoline-file="$TRAMPOLINE_FILE" \
     -cp "$CLASSPATH" \
