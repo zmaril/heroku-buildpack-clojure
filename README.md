@@ -31,7 +31,7 @@ Example usage for an app already stored in git:
     -----> Fetching custom buildpack
     -----> Leiningen 2 (Clojure) app detected
     -----> Installing Leiningen
-           Downloading: leiningen-2.0.0-preview3
+           Downloading: leiningen-2.0.0-preview7
            Writing: lein script
     -----> Building with lein compile :all
            Retrieving org/clojure/clojure/1.3.0/clojure-1.3.0.pom 

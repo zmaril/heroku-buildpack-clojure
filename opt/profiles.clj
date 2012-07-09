@@ -1,3 +1,1 @@
-;; Provide an empty profile in order to avoid warnings when invoking
-;; with-profile to skip user/dev profiles.
-{:production {}}
+{:heroku {:mirrors {#"central|clojars" "http://s3pository.herokuapp.com/clojure"}}}
