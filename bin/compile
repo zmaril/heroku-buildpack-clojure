@@ -22,6 +22,13 @@ else
   echo "-----> Using cached Leiningen $LEIN_VERSION"
 fi
 
+echo
+echo "       Support for Leiningen 2 has been added to the master branch now."
+echo "       Adding :min-lein-version \"2.0.0\" to project.clj will cause"
+echo "       Leiningen 2 to be used so you can drop BUILDPACK_URL. For details see"
+echo "       https://devcenter.heroku.com/articles/clojure-support"
+echo
+
 mkdir -p "$BUILD_DIR/.lein"
 cp "$LEIN_JAR_PATH" "$BUILD_DIR/.lein/leiningen-$LEIN_VERSION-standalone.jar"
 
